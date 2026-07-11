@@ -37,6 +37,38 @@ export default function App() {
     reader.readAsText(file)
   }
 
+  function exportLogs() {
+    const blob = new Blob([JSON.stringify(savedReports, null, 2)], {
+      type: "application/json",
+    })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement("a")
+    a.href = url
+    a.download = `decision-logs-${new Date().toLocaleDateString("en-GB").replace(/\//g, "-")}.json`
+    a.click()
+    URL.revokeObjectURL(url)
+  }
+
+  function importLogs(e) {
+    const file = e.target.files[0]
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = (event) => {
+      try {
+        const imported = JSON.parse(event.target.result)
+        const merged = [...imported, ...savedReports].filter(
+          (report, index, self) =>
+            index === self.findIndex((r) => r.id === report.id)
+        )
+        setSavedReports(merged)
+        localStorage.setItem("decision-logs", JSON.stringify(merged))
+      } catch {
+        alert("Invalid file. Please upload a valid decision logs JSON file.")
+      }
+    }
+    reader.readAsText(file)
+  }
+
   async function generateReport() {
     setLoading(true)
     setReport("")
@@ -113,9 +145,10 @@ Transcript:\n\n${prompt}`,
     setActiveTab("current")
   }
 
-  const filteredReports = savedReports.filter((r) =>
-    r.title.toLowerCase().includes(search.toLowerCase()) ||
-    r.content.toLowerCase().includes(search.toLowerCase())
+  const filteredReports = savedReports.filter(
+    (r) =>
+      r.title.toLowerCase().includes(search.toLowerCase()) ||
+      r.content.toLowerCase().includes(search.toLowerCase())
   )
 
   return (
@@ -150,16 +183,16 @@ Transcript:\n\n${prompt}`,
           {loading ? (
             <span className="flex items-center gap-2">
               <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
               </svg>
               Generating...
             </span>
-          ) : "Generate Report"}
+          ) : (
+            "Generate Report"
+          )}
         </Button>
-        {error && (
-          <p className="text-destructive text-sm mt-2">{error}</p>
-        )}
+        {error && <p className="text-destructive text-sm mt-2">{error}</p>}
       </div>
 
       <div className="flex gap-4 border-b mb-6">
@@ -173,7 +206,8 @@ Transcript:\n\n${prompt}`,
           className={`pb-2 text-sm font-medium transition-colors ${activeTab === "log" ? "border-b-2 border-foreground text-foreground" : "text-muted-foreground hover:text-foreground"}`}
           onClick={() => setActiveTab("log")}
         >
-          Log {savedReports.length > 0 && (
+          Log{" "}
+          {savedReports.length > 0 && (
             <span className="ml-1 text-xs bg-muted px-1.5 py-0.5 rounded-full">
               {savedReports.length}
             </span>
@@ -193,11 +227,12 @@ Transcript:\n\n${prompt}`,
                   </CardTitle>
                   <div className="flex gap-2">
                     {!viewingPast && !isEditing && (
-                      <Button onClick={saveReport}>
-                        Save to Log
-                      </Button>
+                      <Button onClick={saveReport}>Save to Log</Button>
                     )}
-                    <Button variant="outline" onClick={() => setIsEditing(!isEditing)}>
+                    <Button
+                      variant="outline"
+                      onClick={() => setIsEditing(!isEditing)}
+                    >
                       {isEditing ? "Preview" : "Edit"}
                     </Button>
                   </div>
@@ -225,7 +260,9 @@ Transcript:\n\n${prompt}`,
                   </div>
                 ) : (
                   <div className="prose prose-sm max-w-none">
-                    <ReactMarkdown remarkPlugins={[remarkGfm]}>{report}</ReactMarkdown>
+                    <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                      {report}
+                    </ReactMarkdown>
                   </div>
                 )}
               </CardContent>
@@ -240,12 +277,28 @@ Transcript:\n\n${prompt}`,
 
       {activeTab === "log" && (
         <div>
-          <input
-            className="w-full border rounded px-3 py-2 text-sm mb-4"
-            placeholder="Search logs by keyword..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
+          <div className="flex gap-2 mb-4">
+            <input
+              className="flex-1 border rounded px-3 py-2 text-sm"
+              placeholder="Search logs by keyword..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+            <Button variant="outline" onClick={exportLogs}>
+              Export
+            </Button>
+            <label className="cursor-pointer">
+              <Button variant="outline" asChild>
+                <span>Import</span>
+              </Button>
+              <input
+                type="file"
+                accept=".json"
+                className="hidden"
+                onChange={importLogs}
+              />
+            </label>
+          </div>
           {filteredReports.length === 0 ? (
             <p className="text-muted-foreground text-sm">
               {search ? "No logs match your search." : "No saved reports yet."}

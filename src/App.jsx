@@ -20,6 +20,8 @@ export default function App() {
   const [title, setTitle] = useState("")
   const [activeTab, setActiveTab] = useState("current")
   const [error, setError] = useState("")
+  const [viewingPast, setViewingPast] = useState(false)
+  const [search, setSearch] = useState("")
   const [savedReports, setSavedReports] = useState(() => {
     const stored = localStorage.getItem("decision-logs")
     return stored ? JSON.parse(stored) : []
@@ -40,6 +42,7 @@ export default function App() {
     setReport("")
     setError("")
     setIsEditing(false)
+    setViewingPast(false)
     const today = new Date().toLocaleDateString("en-GB", {
       day: "numeric",
       month: "long",
@@ -97,6 +100,7 @@ Transcript:\n\n${prompt}`,
     const updated = [newReport, ...savedReports]
     setSavedReports(updated)
     localStorage.setItem("decision-logs", JSON.stringify(updated))
+    setViewingPast(true)
     setIsEditing(false)
   }
 
@@ -105,8 +109,14 @@ Transcript:\n\n${prompt}`,
     setReport(saved.content)
     setPrompt("")
     setIsEditing(false)
+    setViewingPast(true)
     setActiveTab("current")
   }
+
+  const filteredReports = savedReports.filter((r) =>
+    r.title.toLowerCase().includes(search.toLowerCase()) ||
+    r.content.toLowerCase().includes(search.toLowerCase())
+  )
 
   return (
     <div className="min-h-screen bg-background p-8 max-w-3xl mx-auto">
@@ -157,13 +167,17 @@ Transcript:\n\n${prompt}`,
           className={`pb-2 text-sm font-medium transition-colors ${activeTab === "current" ? "border-b-2 border-foreground text-foreground" : "text-muted-foreground hover:text-foreground"}`}
           onClick={() => setActiveTab("current")}
         >
-          Current Report
+          {viewingPast ? `Viewing: ${title}` : "Current Report"}
         </button>
         <button
           className={`pb-2 text-sm font-medium transition-colors ${activeTab === "log" ? "border-b-2 border-foreground text-foreground" : "text-muted-foreground hover:text-foreground"}`}
           onClick={() => setActiveTab("log")}
         >
-          Log {savedReports.length > 0 && <span className="ml-1 text-xs bg-muted px-1.5 py-0.5 rounded-full">{savedReports.length}</span>}
+          Log {savedReports.length > 0 && (
+            <span className="ml-1 text-xs bg-muted px-1.5 py-0.5 rounded-full">
+              {savedReports.length}
+            </span>
+          )}
         </button>
       </div>
 
@@ -174,17 +188,18 @@ Transcript:\n\n${prompt}`,
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <CardTitle className="flex items-center gap-2">
-                    <Badge>{isEditing ? "Editing" : "Ready"}</Badge>
+                    <span className="text-base">{title}</span>
+                    <Badge>{viewingPast ? "Saved" : "New"}</Badge>
                   </CardTitle>
                   <div className="flex gap-2">
+                    {!viewingPast && !isEditing && (
+                      <Button onClick={saveReport}>
+                        Save to Log
+                      </Button>
+                    )}
                     <Button variant="outline" onClick={() => setIsEditing(!isEditing)}>
                       {isEditing ? "Preview" : "Edit"}
                     </Button>
-                    {!isEditing && (
-                      <Button onClick={() => setIsEditing(true)}>
-                        Save Report
-                      </Button>
-                    )}
                   </div>
                 </div>
               </CardHeader>
@@ -225,18 +240,31 @@ Transcript:\n\n${prompt}`,
 
       {activeTab === "log" && (
         <div>
-          {savedReports.length === 0 ? (
-            <p className="text-muted-foreground text-sm">No saved reports yet.</p>
+          <input
+            className="w-full border rounded px-3 py-2 text-sm mb-4"
+            placeholder="Search logs by keyword..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+          {filteredReports.length === 0 ? (
+            <p className="text-muted-foreground text-sm">
+              {search ? "No logs match your search." : "No saved reports yet."}
+            </p>
           ) : (
             <div className="space-y-2">
-              {savedReports.map((saved) => (
+              {filteredReports.map((saved) => (
                 <Card
                   key={saved.id}
                   className="cursor-pointer hover:bg-muted transition-colors"
                   onClick={() => loadReport(saved)}
                 >
                   <CardContent className="py-3 flex items-center justify-between">
-                    <span className="font-medium">{saved.title}</span>
+                    <div>
+                      <p className="font-medium">{saved.title}</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        Click to open
+                      </p>
+                    </div>
                     <Badge variant="outline">{saved.createdAt}</Badge>
                   </CardContent>
                 </Card>

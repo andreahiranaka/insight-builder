@@ -19,13 +19,16 @@ export default function App() {
   const [isEditing, setIsEditing] = useState(false)
   const [title, setTitle] = useState("")
   const [savedReports, setSavedReports] = useState([])
+  const [error, setError] = useState("")
 
-  async function generateReport() {
-    setLoading(true)
-    setReport("")
-    setIsEditing(false)
-    setTitle("")
+async function generateReport() {
+  setLoading(true)
+  setReport("")
+  setError("")
+  setIsEditing(false)
+  setTitle("")
 
+  try {
     const message = await client.messages.create({
       model: "claude-sonnet-4-6",
       max_tokens: 1024,
@@ -55,10 +58,13 @@ Transcript:\n\n${prompt}`,
         },
       ],
     })
-
     setReport(message.content[0].text)
+  } catch (err) {
+    setError("Something went wrong generating your report. Please try again.")
+  } finally {
     setLoading(false)
   }
+}
 
   function saveReport() {
     if (!report || !title) return
@@ -95,9 +101,21 @@ Transcript:\n\n${prompt}`,
           value={prompt}
           onChange={(e) => setPrompt(e.target.value)}
         />
-        <Button onClick={generateReport} disabled={!prompt || loading}>
-          {loading ? "Generating..." : "Generate Report"}
-        </Button>
+<Button onClick={generateReport} disabled={!prompt || loading}>
+  {loading ? (
+  <span className="flex items-center gap-2">
+    <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
+      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
+    </svg>
+    Generating...
+  </span>
+) : "Generate Report"}
+</Button>
+
+{error && (
+  <p className="text-destructive text-sm mt-2">{error}</p>
+)}
       </div>
 
       {report && (

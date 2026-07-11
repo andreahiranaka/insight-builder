@@ -1,0 +1,20 @@
+Meeting: Product Roadmap Review
+Date: 11 July 2026
+Attendees: Andrea (PM), Marco (CEO), Lisa (CTO), João (Lead Engineer)
+
+Andrea presented the current roadmap. The team discussed priorities for Q3.
+
+Marco raised that the onboarding flow has been getting negative feedback from new users and should be the top priority. Lisa agreed, noting that the engineering team has capacity to start immediately. It was decided that onboarding redesign will be the Q3 focus.
+
+The analytics dashboard feature was discussed. João flagged that it depends on a data pipeline that isn't ready yet. The team decided to push analytics to Q4.
+
+Marco asked about the integration with Salesforce. Andrea said it's not yet scoped. This was left as an open question — Andrea to investigate feasibility and report back by 18 July.
+
+Lisa raised a concern about technical debt in the authentication module. The team agreed it needs to be addressed but did not set a timeline. Left as an open question.
+
+Action items:
+
+- Andrea to write onboarding redesign spec by 18 July
+- João to share data pipeline timeline by 14 July
+- Andrea to investigate Salesforce integration feasibility by 18 July
+- Lisa to create a technical debt assessment for authentication module, no deadline set
